@@ -12,7 +12,9 @@
     in {
       devShell = pkgs.mkShell {
         buildInputs = with pkgs; [
+          beam.packages.erlangR25.erlang-ls
           beam.packages.erlangR25.elixir_1_14
+          beam.packages.erlangR25.elixir_ls
         ];
       };
     });
