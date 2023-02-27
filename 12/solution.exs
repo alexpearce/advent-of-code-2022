@@ -11,6 +11,7 @@ defmodule Solution do
      As it recurses it builds a map of positions to shortest paths.
   """
   def part1() do
+    IO.puts "XXX"
     grid = input()
     start = find_character(grid, ?S)
     goal = find_character(grid, ?E)
@@ -43,15 +44,20 @@ defmodule Solution do
     key
   end
 
-  defp shortest_path(grid, origin, goal, distance \\ 0, visited \\ %{}) do
+  defp shortest_path(grid, origin, goal) do
+    {distance, _} = recurse(grid, origin, goal)
+    distance
+  end
+
+  defp recurse(grid, origin, goal, distance \\ 0, visited \\ %{}) do
     # Character `S` has the same level as `a`.
     starting_character = if grid[origin] == ?S, do: ?a, else: grid[origin]
     cond do
       Map.has_key?(visited, origin) ->
         # We've been down this road higher up in the stack.
-        Map.get(visited, origin)
+        {Map.get(visited, origin), visited}
       origin == goal ->
-        distance
+        {distance, visited}
       true ->
         # IO.inspect origin
         # Explore all valid neighbours and find the path to `goal` which minimises
@@ -59,12 +65,16 @@ defmodule Solution do
         nearby_characters = character_neighbours(starting_character)
         # We must reach the goal from the highest character `z`.
         allowed_characters = if starting_character == ?z, do: MapSet.put(nearby_characters, ?E), else: nearby_characters
-        origin
+        {distances, visited} = origin
           |> coordinate_neighbours
           |> Enum.filter(fn coord -> MapSet.member?(allowed_characters, Map.get(grid, coord)) end)
           # The `Map.put` prevents backtracking during the recursion
-          |> Enum.map(&shortest_path(grid, &1, goal, distance + 1, Map.put(visited, origin, :infinity)))
-          |> Enum.min
+          |> Enum.map_reduce(Map.put(visited, origin, :infinity), fn coord, acc ->
+            {d, v} = recurse(grid, coord, goal, distance + 1, acc)
+            if origin == {0, 0}, do: IO.inspect {coord, v}
+            {d, Map.merge(v, Map.put(acc, coord, d), fn _k, v1, v2 -> Enum.min([v1, v2]) end)}
+          end)
+        {Enum.min(distances), visited}
     end
   end
 
